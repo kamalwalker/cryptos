@@ -113,4 +113,4 @@ if __name__ == "__main__":
         messageToSend = " ".join(header) + '\n' + '\n'.join(message)
         utils.sendMail(messageToSend, df_file)
     else:
-        print 'nothing to send {}'.format(now)
+        print('nothing to send {}'.format(now))
