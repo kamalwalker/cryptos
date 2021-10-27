@@ -1,34 +1,40 @@
-import urllib, json, pandas as pd, datetime, numpy as np, smtplib, locale, os.path as osp, requests, lxml
+import urllib, json, pandas as pd, datetime, numpy as np, smtplib, locale, os.path as osp, requests
+from requests import Request, Session
+from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
+import json
 
 class DataRequester:
+    MAIN_URL = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/{}/latest' 
     def __init__(self):
         self.session = getSession()
 
     def getUrlResponse(self, url, parameters):
         response = self.session.get(url, params=parameters)
-        data = json.loads(response.text)
+        data = json.loads(response.text)['data']
         return data
 
     def getAllData(self, limit=200, start=1, convert='USD'):
-        url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest'
+        url = self.MAIN_URL.format("listings")# quotes and market-pairs instead of listings
         parameters = {
             'start': start,
             'limit': limit,
             'convert': convert
             }
-        return getUrlResponse(url, parameters)
+        return self.getUrlResponse(url, parameters)
 
-
+    def getQuotes(self, tickers):
+        #TODO : debug
+        url = self.MAIN_URL.format(",".join(tickers)) 
+        parameters = {"symbol":tickers}
+        return self.getUrlResponse(url ,parameters)
 
 
 def getSession():
-    from requests import Request, Session
-    from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
-    import json
 
     headers = {
         'Accepts': 'application/json',
         'X-CMC_PRO_API_KEY': '627d61db-1eb0-4c3b-a77f-9bf3eb856b32',
+
     }
 
     session = Session()
@@ -46,27 +52,21 @@ def getUrlResponse(url, parameters, session=None):
     return data
 
 
-
-def urlToDataFrame(url):
-    response = urllib.urlopen(url)
-    data = json.loads(response.read())
+def urlToDataFrame(url, parameters=None):
+    data = getUrlResponse(url, parameters=parameters)
     df = pd.DataFrame(data)
     return df
 
 
-
-
 #################################################
-
+## TODO: it seems all those lines below 
 def getMarkets(ticker):
     url  = "https://coinmarketcap.com/currencies/{}/#markets".format(ticker)
-    df = urlToDataFrame(url)
-    return df
+    return urlToDataFrame(url) 
 
 def getActualData(ticker='',limit=0):
     url = "https://api.coinmarketcap.com/v1/ticker/{}/?limit={}".format(ticker,limit)
-    df = urlToDataFrame(url)
-    return df
+    return urlToDataFrame(url)
 
 def getAllTickers(limit):
     df = getActualData(ticker='',limit=limit)
@@ -74,16 +74,17 @@ def getAllTickers(limit):
 
 def getAllMarkets(ticker):
     url = "https://coinmarketcap.com/currencies/{}/#markets".format(ticker)
-    df = urlToDataFrame(url)
-    return df
+    return urlToDataFrame(url) 
 
 def getHistoricalData(ticker,startDate,endDate):
 
     url = "https://coinmarketcap.com/currencies/{}/historical-data/?start={}&end={}".format(ticker,startDate,endDate)
-    import ipdb; ipdb.set_trace()
-    result = pd.read_html(url)
-    df = result[0]
-    return df
+    #result = pd.read_html(url)
+    #df = result[0]
+    #return df
+    return urlToDataFrame(url) 
+
+#############
 
 def getNowStr():
     return datetime.datetime.now().strftime('%Y:%m:%d:%H.%M.%S')
@@ -99,10 +100,10 @@ def jlog(message):
     print(message)
 
 
-def sendMail(message,df_file):
+def sendMail(message):
     fromMail = "pythonalertkf@gmail.com"
     password = "jamila111"
-    for toMail in ["kamalfaik@gmail.com","mohamedfaik@gmail.com"]:
+    for toMail in ["kamalfaik@gmail.com"]:
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(fromMail, password)
@@ -118,6 +119,7 @@ def formatMillions(nbr):
     return nbr_str
 
 if __name__ == "__main__":
-   # url, params = getAllDataUrlAndParams()
-   # response = getUrlResponse(url, params)
-    response = getHistoricalData("BTC","20200101", "20200103")
+    pass
+    #url, params = getAllDataUrlAndParams()
+    #response = getUrlResponse(url, params)
+    #response = getHistoricalData("BTC","20200101", "20200103")

@@ -6,6 +6,7 @@ import pandas as pd
 import utils
 
 
+
 def checkVolumeSpike(ticker ,hist,actual):
 
     stdParam = 3
@@ -73,7 +74,38 @@ def checkTicker(ticker,startDate,endDate):
     result      = checkVolumeSpike(ticker, hist, actual)
     return   result
 
-if __name__ == "__main__":
+
+####### SIGNALS ########
+
+def getHighestVolumeChanges(limit=200):
+    # get all listings now 
+    # get all the ones that have the biggest volume increase
+    # with marketCap > minMarketCap
+    # with volume > minVolume
+    dr = utils.DataRequester()
+    data = dr.getAllData(limit=limit)
+    dfRows = []
+    for uData in data:
+    
+        ticker = uData['symbol']
+        qData = uData['quote']['USD']
+        items = qData.items()
+        items.sort(key = lambda item: item[0])
+        keys = [it[0] for it in items]
+        values = [ticker] + [it[1] for it in items]
+        dfRows.append(values)
+
+    df = pd.DataFrame(dfRows, columns= ['ticker'] + keys)
+    return df         
+
+def getAllTimeWinners(limit=200):
+    # return tickers that were positive for all percentage returns in coinmarketCap quotes data
+    df = getHighestVolumeChanges(limit=limit)
+    retCols = [col for col in df.columns if 'percent' in col]
+    mask = np.all(np.array([df[col] >0 for col in retCols]), axis=0)
+    return df[mask]
+
+def getSpikeVolumeTickersAndSendMail():
 
     allTickers = utils.getAllTickers(limit=200)
     startDate = utils.getToday(-20)
@@ -114,3 +146,8 @@ if __name__ == "__main__":
         utils.sendMail(messageToSend, df_file)
     else:
         print('nothing to send {}'.format(now))
+
+
+
+if __name__ == "__main__":
+    pass
