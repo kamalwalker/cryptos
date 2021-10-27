@@ -74,7 +74,7 @@ def checkTicker(ticker,startDate,endDate):
     result      = checkVolumeSpike(ticker, hist, actual)
     return   result
 
-
+#
 ####### SIGNALS ########
 
 def getHighestVolumeChanges(limit=200):
